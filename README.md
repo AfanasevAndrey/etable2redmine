@@ -41,3 +41,24 @@
 |#HSPLIT|      |  |  |  |  |
 +-------+------+--+--+--+--+
 ```
+
+Пример запуска:
+```
+python3 etable2redmine.py --br 3 --bc 1 table_file.ods
+```
+Для удобства используются аргументы командой строки:
+```
+usage: etable2redmine.py [-h] [--out OUT] [--br BR] [--bc BC] [-o] file
+
+e-table to RedMine Converter
+
+positional arguments:
+  file            e-table file for convert to RedMine synt
+
+options:
+  -h, --help      show this help message and exit
+  --out OUT       File for saving text result. If not defind, result will be printed
+  --br BR         Bold few upest rows. Enter the number of upper rows to bold them
+  --bc BC         Bold few left columns. Enter the number of left columns to bold them
+  -o, --OneTable  Point this if onle one table in etable file. Use for less work time
+```
