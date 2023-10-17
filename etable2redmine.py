@@ -127,7 +127,6 @@ def convert_few_tables_in_sheet_2_redmine(tables : list(list(list())), bold_rows
 # Преобразовываем данные в формат, пригодный для Redmine
 # На текущий момент возможно только горизонтальное слияние
 #-------------------------------------------------------------------------------------------------------------------------
-# TODO Вертикальное слияние ячеек
 def convert_raw_data_2_redmine(data : list(list()), bold_rows_number : int, bold_columns_number : int) -> str:
     '''
     Функция преобразует сырое содержание таблицы из списка списков в строку, отформатированную
@@ -227,7 +226,7 @@ def vertical_join(raw_table : list(list())):
     # Номер строки куда мержим
     merging_row_index = 0
     # Номера столбцов куда мержим и количество сливаемых ячеек
-    merging_cell_in_row = collections.defaultdict(int)
+    merging_cell_in_row = {}
     # Число сливаемых ячеек
     merging_count = 1
 
@@ -240,7 +239,7 @@ def vertical_join(raw_table : list(list())):
             # Запоминаем индексы столбцов для слияния и количество ячеек слияния
             while VERTICAL_JOIN in line:
                 ind = line.index(VERTICAL_JOIN)
-                merging_cell_in_row[ind] += 1
+                merging_cell_in_row[ind] = merging_cell_in_row.get(ind, 0) + 1
                 line[ind] = "#DELETE"
             # Удаляем все ячейки, помеченные как "#DELETE"
             while "#DELETE" in line:
@@ -251,7 +250,7 @@ def vertical_join(raw_table : list(list())):
                 merging = False
                 # Заполняем синтаксис слияния
                 for cell_index in merging_cell_in_row.keys():
-                    raw_table[merging_row_index][cell_index] = f"/{merging_cell_in_row[cell_index] + 1}.{raw_table[merging_row_index][cell_index]}"
+                    raw_table[merging_row_index][cell_index] = f"/{merging_cell_in_row.get(cell_index, 0) + 1}.{raw_table[merging_row_index][cell_index]}"
                 merging_cell_in_row = {}
             else:
                 # получаем номер строки, куда сливаем
@@ -289,20 +288,29 @@ def bold_upper_rows(number : int, raw_data : list(list())) -> None:
 
     Ничего не возвращает, только изменяет переданную таблицу
     '''
-    for i in range(number):
-        for cell in raw_data[i]:
-            # Пропускаем если ячейка уже жирная
-            if cell.startswith('*') and cell.endswith('*'):
-                continue
-            # Пропускаем если ячейка пустая
-            elif cell == '':
-                continue
-            # Пропускаем если ячейка содержит управляющую конструкцию
-            elif cell_in_keywords(cell):
-                continue
-            ind = raw_data[i].index(cell)
-            raw_data[i][ind] = f"*{cell}*"
-
+    # Если первые строки это именно строки, то пропускаем
+    for line in raw_data:
+        if STRING_LINE in line:
+            continue
+        # Получаем индекс строки и делаем строки жирными
+        start = raw_data.index(line)
+        end = start + number
+        if end > len(raw_data):
+            end = len(raw_data)
+        for i in range(start, end):
+            for cell in raw_data[i]:
+                # Пропускаем если ячейка уже жирная
+                if cell.startswith('*') and cell.endswith('*'):
+                    continue
+                # Пропускаем если ячейка пустая
+                elif cell == '':
+                    continue
+                # Пропускаем если ячейка содержит управляющую конструкцию
+                elif cell_in_keywords(cell):
+                    continue
+                ind = raw_data[i].index(cell)
+                raw_data[i][ind] = f"*{cell.strip()}*"
+        return None
 
 
 #-------------------------------------------------------------------------------------------------------------------------
@@ -319,6 +327,10 @@ def bold_left_columns(number : int, raw_data : tuple(list())) -> None:
     Ничего не возвращает, только изменяет переданную таблицу
     '''    
     for line in raw_data:
+        # Если первые строки это именно строки, то пропускаем
+        if STRING_LINE in line:
+            continue
+        # Делаем столбцы жирными
         for i in range(number):
             # Пропускаем если ячейка уже жирная
             if line[i].startswith('*') and line[i].endswith('*'):
@@ -329,7 +341,8 @@ def bold_left_columns(number : int, raw_data : tuple(list())) -> None:
             # Пропускаем если ячейка содержит управляющую конструкцию
             elif cell_in_keywords(line[i]):
                 continue
-            line[i] = f"*{line[i]}*"
+            line[i] = f"*{line[i].strip()}*"
+
 
 #-------------------------------------------------------------------------------------------------------------------------
 # Проверка вхождения значения ячейки в управляющие ключевые слова
